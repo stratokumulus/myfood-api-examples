@@ -1,0 +1,30 @@
+rest:
+  - resource: "https://hub.myfood.eu/api/identity/token"
+    method: POST
+    payload: !secret myfood_payload
+    scan_interval: 43200 # Token read twice a day
+    headers:
+      Content-Type: application/json
+    sensor:
+      - name: "gtoken"
+        value_template: "{{ value_json.data.refreshToken }}"
+        json_attributes_path: $.data
+        json_attributes:
+          - token
+          - refreshTokenExpiryTime
+
+  - resource: "https://hub.myfood.eu/api/v1/ProductionUnit/GetProductionUnitDetailForUser?id=942"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ state_attr('sensor.gtoken','token')}}"
+      Accept: "*/*"
+    scan_interval: 900 # Values read every 15 minutes
+    sensor:
+      - name: greenhouse
+        value_template: "{{ value_json.data.pioneerCitizenNumber }}"
+        json_attributes_path: $.data
+        json_attributes:
+          - currentPhValue
+          - currentWaterTempValue
+          - currentAirTempValue
+          - currentHumidityValue
